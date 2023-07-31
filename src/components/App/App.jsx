@@ -14,31 +14,25 @@ export class App extends Component {
     images: [],
     currentPage: 1,
     currentHits: 0,
-    perPage: 12,
+    totalHits: 0,
     isLoading: false,
     isError: false,
     error: null,  
     isButton: false,
   }
 
-  formSubmit = async data => {
-    console.log(data.tag);
-    await this.setState({ tag: data.tag });
+  formSubmit = data => {
+    this.setState({ tag: data.tag, currentPage: 1, isLoading: true  });    
 
-    this.state.currentPage = 1;
-    this.setState({ isLoading: true }); 
-    
-
-    const { tag, currentPage, perPage } = this.state;
-
-    getPhoto(tag, currentPage, perPage)
+    getPhoto(data.tag)
       .then(r => {  
-      if (r.hits.length !== 0 && tag !=='') {
+      if (r.hits.length !== 0) {
         this.setState({
           images: r.hits,
           isLoading: false,
-          currentHits: r.totalHits - perPage,
           isButton: true,
+          currentHits: r.hits.length,
+          totalHits: r.totalHits,
         });
       } else {
         Notiflix.Notify.failure(
@@ -51,40 +45,39 @@ export class App extends Component {
   };
 
   componentDidUpdate(_, prevState) {
+    
     if (prevState.currentPage !== this.state.currentPage) {
       console.log(`Привет! Ты  на следующей странице${this.state.currentPage}`);
+    
+      this.setState({ isLoading: true, isError: false, isButton: false });
+
+      const { tag, currentPage } = this.state;
+
+      getPhoto(tag, currentPage)
+        .then(r => {  
+          if (r.hits.length !== 0) {
+            this.setState( prevstate=> ({
+              images: [...prevState.images, ...r.hits],
+              isLoading: false,
+              currentHits: prevState.currentHits + r.hits.length,
+            }));
+            
+            const difference = this.state.totalHits - this.state.currentHits;
+            if (difference > r.hits.length) {
+              this.setState({isButton: true})
+            } else {
+              this.setState({isButton: false})
+            }
+          }   
+        })
+        .catch(error => this.setState({isError: true, error}))
+        .finally(() => this.setState({ isLoading: false }));
     }
-
-    //this.setState({ isLoading: true, isError: false });
-
-    // const { tag, currentPage, perPage } = this.state;
-
-    // getPhoto(tag, currentPage, perPage)
-    //   .then(r => {  
-    //     if (r.hits.length !== 0) {
-        
-    //     const newImages = r.hits.map(
-    //       ({ id, tag, webformatURL, largeImageURL }) => ({
-    //         id,
-    //         tag,
-    //         webformatURL,
-    //         largeImageURL,
-    //       })
-    //     );
-
-    //     this.setState( prevstate=> ({
-    //       images: [...prevState.images, ...newImages],
-    //       isLoading: false,
-    //       currentHits: prevstate.currentHits - perPage,
-    //     }));
-    //   }})
-    //   .catch(error => this.setState({isError: true, error}))
-    //   .finally(() => this.setState({isLoading: false}));
-
   }
 
-  loadMoreImages = async() => {
-    await this.setState(prevState => ({
+  loadMoreImages = (event) => {
+    event.preventDefault(); // не понимаю,почему всё равно перезагружает при добавлении новых картинок
+    this.setState(prevState => ({
       currentPage: prevState.currentPage + 1,
     }));
   }
