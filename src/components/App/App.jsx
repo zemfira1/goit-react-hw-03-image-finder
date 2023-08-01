@@ -20,6 +20,10 @@ export class App extends Component {
     
   }
   formSubmit = data => {
+    if (data.tag === this.state.tag) {
+      return;
+    }
+    
     this.setState({
       tag: data.tag,
       images: [],
