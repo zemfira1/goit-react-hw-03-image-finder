@@ -25,11 +25,11 @@ export class App extends Component {
       Notiflix.Notify.warning('You have not entered search query!');
       return;
     }
-    this.setState(prevState=>({
+    this.setState({
       tag: data.tag,
       images: [],
       currentPage: 1,
-    }));
+    });
   }
 
   componentDidUpdate(_, prevState) {
