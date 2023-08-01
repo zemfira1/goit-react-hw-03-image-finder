@@ -38,6 +38,7 @@ export class Searchbar extends Component{
                         type="text"
                         autoComplete="off"
                         autoFocus
+                        required
                         placeholder="Search images and photos"
                     />
                 </Form>
@@ -55,4 +56,5 @@ Searchbar.propTypes = {
     autoComplete: PropTypes.string,
     autoFocus: PropTypes.bool,
     placeholder: PropTypes.string,
+    required: PropTypes.bool,
 }

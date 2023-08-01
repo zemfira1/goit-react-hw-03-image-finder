@@ -20,11 +20,6 @@ export class App extends Component {
     
   }
   formSubmit = data => {
-    if (data.tag === '') {
-      console.log('нет запроса');
-      Notiflix.Notify.warning('You have not entered search query!');
-      return;
-    }
     this.setState({
       tag: data.tag,
       images: [],
@@ -33,56 +28,45 @@ export class App extends Component {
   }
 
   componentDidUpdate(_, prevState) {
+    const { tag, currentPage } = this.state;
     
-    if (prevState.currentPage !== this.state.currentPage || prevState.tag !== this.state.tag) {    
+    if (prevState.currentPage !== currentPage || prevState.tag !== tag) {    
       this.setState({ isLoading: true});
-
-      const { tag, currentPage } = this.state;
 
       getPhoto(tag, currentPage)
         .then(r => {  
-
           if (r.hits.length === 0) {
             Notiflix.Notify.failure('Sorry, there are no images matching your search query.');
             return;
           }
 
-          if (r.hits.length !== 0) {
-            this.setState( prevstate=> ({
-              images: [...prevState.images, ...r.hits],
-            }));
-            
-            if (this.state.currentPage < Math.ceil(r.totalHits / 12)) {
-              this.setState({ isButton: true });
-            } else {
-              this.setState({ isButton: false });
-            }
+          this.setState( prevState=> ({
+            images: [...prevState.images, ...r.hits],
+            isButton: this.state.currentPage < Math.ceil(r.totalHits / 12),
+          }));
           }   
-        })
+        )
         .catch(error => this.setState({isError: true, error}))
         .finally(() => this.setState({ isLoading: false }));
     }
   }
 
-  loadMoreImages = (event) => {
-    event.preventDefault(); // не понимаю,почему всё равно перезагружает при добавлении новых картинок
+  loadMoreImages = () => {
     this.setState(prevState => ({
       currentPage: prevState.currentPage + 1,
     }));
   }
   
   render() {
+    const arrayLength = this.state.images.length; 
+    const { isLoading, isButton, images } = this.state;
+
     return (
       <Container>        
         <Searchbar onSubmit={this.formSubmit} />
-
-        {this.state.isLoading
-          ? <Loader />
-          : <ImageGallery images={this.state.images} />
-        }
-        {this.state.isButton &&
-            <Button onClick={this.loadMoreImages } />
-        }
+        {isLoading && <Loader />}
+        {arrayLength!==0 && <ImageGallery images={images} />}        
+        {isButton && <Button onClick={this.loadMoreImages } />}
       </Container>
     );
   } 
