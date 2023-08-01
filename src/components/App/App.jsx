@@ -13,60 +13,49 @@ export class App extends Component {
     tag: '',
     images: [],
     currentPage: 1,
-    currentHits: 0,
-    totalHits: 0,
     isLoading: false,
+    isButton: false,
     isError: false,
     error: null,  
-    isButton: false,
+    
   }
-
   formSubmit = data => {
-    this.setState({ tag: data.tag, currentPage: 1, isLoading: true  });    
-
-    getPhoto(data.tag)
-      .then(r => {  
-      if (r.hits.length !== 0) {
-        this.setState({
-          images: r.hits,
-          isLoading: false,
-          isButton: true,
-          currentHits: r.hits.length,
-          totalHits: r.totalHits,
-        });
-      } else {
-        Notiflix.Notify.failure(
-          'You have not entered search query or there are no images matching your search query. Please, try again.'
-        );
-      }
-    })
-      .catch(error => this.setState({isError: true, error, isButton: false }))
-      .finally(() => this.setState({isLoading: false}));
-  };
+    if (data.tag === '') {
+      console.log('нет запроса');
+      Notiflix.Notify.warning('You have not entered search query!');
+      return;
+    }
+    this.setState(prevState=>({
+      tag: data.tag,
+      images: [],
+      currentPage: 1,
+    }));
+  }
 
   componentDidUpdate(_, prevState) {
     
-    if (prevState.currentPage !== this.state.currentPage) {
-      console.log(`Привет! Ты  на следующей странице${this.state.currentPage}`);
-    
-      this.setState({ isLoading: true, isError: false, isButton: false });
+    if (prevState.currentPage !== this.state.currentPage || prevState.tag !== this.state.tag) {    
+      this.setState({ isLoading: true});
 
       const { tag, currentPage } = this.state;
 
       getPhoto(tag, currentPage)
         .then(r => {  
+
+          if (r.hits.length === 0) {
+            Notiflix.Notify.failure('Sorry, there are no images matching your search query.');
+            return;
+          }
+
           if (r.hits.length !== 0) {
             this.setState( prevstate=> ({
               images: [...prevState.images, ...r.hits],
-              isLoading: false,
-              currentHits: prevState.currentHits + r.hits.length,
             }));
             
-            const difference = this.state.totalHits - this.state.currentHits;
-            if (difference > r.hits.length) {
-              this.setState({isButton: true})
+            if (this.state.currentPage < Math.ceil(r.totalHits / 12)) {
+              this.setState({ isButton: true });
             } else {
-              this.setState({isButton: false})
+              this.setState({ isButton: false });
             }
           }   
         })
